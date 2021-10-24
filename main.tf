@@ -96,6 +96,32 @@ resource "aws_iam_role_policy_attachment" "ms-node-AmazonEC2ContainerRegistryRea
   role       = aws_iam_role.ms-node.name
 }
 
+resource "aws_iam_policy" "ms-node-AmazonECRImagePullPolicy" {
+  name   = "${local.cluster_name}.node.AmazonECRImagePullPolicy"
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:BatchGetImage",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:GetAuthorizationToken"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "ms-node-AmazonECRImagePullAttach" {
+  policy_arn = aws_iam_policy.ms-node-AmazonECRImagePullPolicy.arn
+  role       = aws_iam_role.ms-node.name
+}
+
 # Node Group
 resource "aws_eks_node_group" "ms-node-group" {
   cluster_name    = aws_eks_cluster.ms-up-running.name
@@ -115,7 +141,8 @@ resource "aws_eks_node_group" "ms-node-group" {
   depends_on = [
     aws_iam_role_policy_attachment.ms-node-AmazonEKSWorkerNodePolicy,
     aws_iam_role_policy_attachment.ms-node-AmazonEKS_CNI_Policy,
-    aws_iam_role_policy_attachment.ms-node-AmazonEC2ContainerRegistryReadOnly
+    aws_iam_role_policy_attachment.ms-node-AmazonEC2ContainerRegistryReadOnly,
+    aws_iam_role_policy_attachment.ms-node-AmazonECRImagePullAttach
   ]
 }
 
